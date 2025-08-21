@@ -1,4 +1,3 @@
-// backend/models/setting.js
 import mongoose from 'mongoose';
 
 const settingsSchema = new mongoose.Schema({
@@ -15,5 +14,4 @@ const settingsSchema = new mongoose.Schema({
   }
 });
 
-const Setting = mongoose.model('Setting', settingsSchema);
-export default Setting;
+export default mongoose.model('Setting', settingsSchema);

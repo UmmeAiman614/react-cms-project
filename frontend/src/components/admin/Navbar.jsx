@@ -1,103 +1,168 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { NavLink, Link, useNavigate } from "react-router-dom";
+import api from "../../api/api";
 
-const Navbar = ({ role }) => {
+const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const location = useLocation();
+  const [settings, setSettings] = useState({ siteTitle: "", logo: "" });
+  const [role, setRole] = useState(""); // user role
+  const navigate = useNavigate();
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
+  const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+
+  // Fetch site settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get("/admin/settings");
+        setSettings(res.data);
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  // Fetch user role
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await api.get("/admin/dashboard");
+        setRole(res.data.role);
+      } catch (err) {
+        console.error("Error fetching user role:", err);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/admin/login", { replace: true });
   };
 
-  // Menu items
-  const menuItems = [
-    { name: 'Dashboard', path: '/admin/dashboard' },
-    { name: 'Article', path: '/admin/article' },
-    ...(role === 'admin'
-      ? [
-          { name: 'Category', path: '/admin/category' },
-          { name: 'Users', path: '/admin/users' },
-        ]
-      : []),
-    { name: 'Comments', path: '/admin/comment' },
-    ...(role === 'admin' ? [{ name: 'Settings', path: '/admin/settings' }] : []),
+  // NavLink class (works with isActive)
+  const linkClass = ({ isActive }) =>
+    `px-3 py-1 rounded transition ${
+      isActive
+        ? "bg-light-mint text-deep-green font-bold"
+        : "text-white hover:bg-light-mint"
+    }`;
+
+  // Mobile button class (matches NavLink styling)
+  const mobileButtonClass =
+    "px-3 py-1 rounded text-white hover:bg-light-mint transition block w-full text-left";
+
+  const commonLinks = [
+    { to: "/admin/dashboard", label: "Dashboard" },
+    { to: "/admin/articles", label: "Article" },
+    { to: "/admin/comments", label: "Comments" },
+  ];
+
+  const adminLinks = [
+    { to: "/admin/categories", label: "Category" },
+    { to: "/admin/users", label: "Users" },
+    { to: "/admin/settings", label: "Settings" },
   ];
 
   return (
-    <header className="bg-light-mint shadow">
-      <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap px-4 py-2">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <Link to="/admin/dashboard">
-            <img
-              className="h-12 md:h-14 w-auto"
-              src="/images/news.jpg"
-              alt="Logo"
-            />
-          </Link>
-        </div>
-
-        {/* Hamburger & Logout */}
-        <div className="flex items-center gap-2 md:gap-4">
-          <button
-            className="md:hidden text-deep-green text-2xl"
-            onClick={toggleMobileMenu}
-          >
-            {mobileMenuOpen ? (
-              <i className="fa fa-times"></i>
+    <>
+      {/* HEADER */}
+      <div className="bg-pale-yellow shadow">
+        <div className="container mx-auto flex items-center justify-between px-4 py-2">
+          {/* Logo */}
+          <Link to="/admin/dashboard" className="flex items-center gap-2 min-w-0">
+            {settings.website_logo ? (
+              <img
+                className="h-10 w-auto md:h-14"
+                src={`http://localhost:3000/uploads/${settings.website_logo}`}
+                alt="Logo"
+              />
             ) : (
-              <i className="fa fa-bars"></i>
+              <img className="h-10 w-auto md:h-14" src="/images/news.jpg" alt="Logo" />
             )}
-          </button>
+          </Link>
 
-          <a
-            href="/admin/logout"
-            className="font-bold text-deep-green flex items-center gap-1 hover:text-muted-green transition-colors"
-          >
-            <i className="fa fa-sign-out"></i> Logout
-          </a>
+          {/* Title */}
+          {settings.website_title && (
+            <span className="hidden md:block text-deep-green font-extrabold text-xl md:text-2xl text-center truncate flex-1">
+              {settings.website_title}
+            </span>
+          )}
+
+          {/* Hamburger + Logout */}
+          <div className="flex items-center gap-4">
+            <button className="md:hidden text-deep-green" onClick={toggleMenu}>
+              {mobileMenuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+
+            {/* Logout button desktop */}
+            <button onClick={handleLogout} className="hidden md:flex text-deep-green font-bold items-center gap-1">
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Desktop Menu */}
-      <nav className="bg-muted-green hidden md:flex shadow">
-        <ul className="flex justify-center flex-grow list-none">
-          {menuItems.map((item) => (
-            <li key={item.name}>
-              <Link
-                to={item.path}
-                className={`block px-4 py-2 text-white font-semibold hover:bg-light-mint hover:text-deep-green transition-colors ${
-                  location.pathname === item.path ? 'bg-light-mint text-deep-green font-bold' : ''
-                }`}
-              >
-                {item.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <nav className="bg-muted-green md:hidden shadow">
-          <ul className="flex flex-col list-none p-2">
-            {menuItems.map((item) => (
-              <li key={item.name}>
-                <Link
-                  to={item.path}
-                  className={`block px-4 py-2 text-white font-semibold rounded hover:bg-light-mint hover:text-deep-green transition-colors ${
-                    location.pathname === item.path ? 'bg-light-mint text-deep-green font-bold' : ''
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
+      {/* NAVIGATION */}
+      <nav className="bg-muted-green shadow">
+        <div className="container mx-auto px-4">
+          {/* Desktop Menu */}
+          <ul className="hidden md:flex justify-center gap-4 py-2">
+            {commonLinks.map((link) => (
+              <li key={link.to}>
+                <NavLink to={link.to} className={linkClass}>
+                  {link.label}
+                </NavLink>
               </li>
             ))}
+            {role === "admin" &&
+              adminLinks.map((link) => (
+                <li key={link.to}>
+                  <NavLink to={link.to} className={linkClass}>
+                    {link.label}
+                  </NavLink>
+                </li>
+              ))}
           </ul>
-        </nav>
-      )}
-    </header>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <ul className="md:hidden flex flex-col gap-2 py-2">
+              {commonLinks.map((link) => (
+                <li key={link.to}>
+                  <NavLink to={link.to} className="px-3 py-1 rounded text-white hover:bg-light-mint block w-full text-left">
+                    {link.label}
+                  </NavLink>
+                </li>
+              ))}
+              {role === "admin" &&
+                adminLinks.map((link) => (
+                  <li key={link.to}>
+                    <NavLink to={link.to} className="px-3 py-1 rounded text-white hover:bg-light-mint block w-full text-left">
+                      {link.label}
+                    </NavLink>
+                  </li>
+                ))}
+              <li>
+                <button onClick={handleLogout} className={mobileButtonClass}>
+                  Logout
+                </button>
+              </li>
+            </ul>
+          )}
+        </div>
+      </nav>
+    </>
   );
 };
 

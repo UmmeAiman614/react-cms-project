@@ -1,4 +1,3 @@
-// backend/middlewares/multer.js
 import multer from 'multer';
 import path from 'path';
 
@@ -12,7 +11,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// File filter to accept only images
+// File filter to accept only image files
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   if (
@@ -27,7 +26,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Initialize multer with storage, filter, and file size limit
+// Initialize multer with storage and file filter
 const upload = multer({
   storage,
   fileFilter,

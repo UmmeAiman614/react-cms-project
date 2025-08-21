@@ -1,110 +1,104 @@
-import React, { useEffect, useState } from "react";
+// src/pages/admin/Users.jsx
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Layout from "../../components/admin/Layout";
-import api from "../../api/api";
-import { useNavigate } from "react-router-dom";
-import { TabulatorFull as Tabulator } from "tabulator-tables";
-import "tabulator-tables/dist/css/tabulator.min.css";
+import { getAllUsers, deleteUser } from "../../api/api";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
-  const navigate = useNavigate();
+  const [error, setError] = useState("");
 
+  // Fetch users on mount
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await api.get("/admin/users");
-        setUsers(res.data);
+        const data = await getAllUsers();
+        setUsers(data);
       } catch (err) {
-        console.error(err);
+        setError(err.response?.data?.message || "Failed to fetch users");
       }
     };
     fetchUsers();
   }, []);
 
-  useEffect(() => {
-    if (!users.length) return;
+  // Delete user
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure to delete this user?")) return;
 
-    const table = new Tabulator("#usersTable", {
-      data: users,
-      layout: "fitDataTable",
-      responsiveLayout: false,
-      pagination: true,
-      paginationSize: 10,
-      paginationSizeSelector: [5, 10, 25, 50, 100],
-      resizableColumns: true,
-      rowFormatter: function (row) {
-        const index = row.getPosition(true);
-        const el = row.getElement();
-        el.style.backgroundColor = index % 2 === 0 ? "#93DA97" : "#C2E8C5";
-        el.style.color = "#3E5F44";
-
-        el.addEventListener("mouseenter", () => {
-          el.style.backgroundColor = "#5E936C";
-          el.style.color = "#fff";
-        });
-        el.addEventListener("mouseleave", () => {
-          el.style.backgroundColor = index % 2 === 0 ? "#93DA97" : "#C2E8C5";
-          el.style.color = "#3E5F44";
-        });
-      },
-      columns: [
-        { title: "S.No.", formatter: "rownum", hozAlign: "center", minWidth: 80 },
-        { title: "Full Name", field: "fullname", headerFilter: "input", minWidth: 200 },
-        { title: "User Name", field: "username", headerFilter: "input", minWidth: 200 },
-        { title: "Role", field: "role", headerFilter: "input", minWidth: 150 },
-        {
-          title: "Actions",
-          hozAlign: "center",
-          headerSort: false,
-          minWidth: 200,
-          formatter: (cell) => {
-            const id = cell.getRow().getData()._id;
-            return `
-              <div class="flex flex-row gap-1 justify-center">
-                <button class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition" onclick="editUser('${id}')">Edit</button>
-                <button class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition" onclick="deleteUser('${id}')">Delete</button>
-              </div>
-            `;
-          },
-        },
-      ],
-    });
-
-    // Delete function
-    window.deleteUser = async (id) => {
-      if (window.confirm("Are you sure to delete this user?")) {
-        try {
-          const response = await api.delete(`/admin/delete-user/${id}`);
-          if (response.status === 200) table.replaceData(users.filter(u => u._id !== id));
-          else alert("Failed to delete user.");
-        } catch (err) {
-          console.error(err);
-          alert("Error deleting user.");
-        }
-      }
-    };
-
-    window.editUser = (id) => navigate(`/admin/update-user/${id}`);
-  }, [users, navigate]);
+    try {
+      await deleteUser(id);
+      setUsers(users.filter((user) => user._id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete user");
+    }
+  };
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 max-w-7xl">
+      <div className="max-w-7xl mx-auto">
+        {/* Header & Add Button */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <i className="fa fa-users"></i> All Users
           </h1>
-          <button
+          <Link
+            to="/admin/users/add"
             className="bg-muted-green text-white px-4 py-2 rounded hover:bg-deep-green transition w-full md:w-auto text-center"
-            onClick={() => navigate("/admin/add-user")}
           >
             Add User
-          </button>
+          </Link>
         </div>
 
+        {error && <div className="text-red-600 mb-4">{error}</div>}
+
+        {/* Users Table */}
         <div className="flex justify-center">
           <div className="bg-light-mint rounded-lg shadow p-4 max-w-full md:max-w-[1200px] overflow-x-auto md:overflow-x-hidden">
-            <div id="usersTable" className="min-w-[600px]"></div>
+            <table className="min-w-[600px] w-full border-collapse">
+              <thead>
+                <tr className="bg-muted-green text-white">
+                  <th className="p-2 border">S.No.</th>
+                  <th className="p-2 border">Full Name</th>
+                  <th className="p-2 border">Username</th>
+                  <th className="p-2 border">Role</th>
+                  <th className="p-2 border">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user, index) => (
+                  <tr
+                    key={user._id}
+                    className={index % 2 === 0 ? "bg-light-mint" : "bg-[#C2E8C5]"}
+                  >
+                    <td className="p-2 border text-center">{index + 1}</td>
+                    <td className="p-2 border">{user.fullname}</td>
+                    <td className="p-2 border">{user.username}</td>
+                    <td className="p-2 border">{user.role}</td>
+                    <td className="p-2 border text-center flex justify-center gap-2">
+                      <Link
+                        to={`/admin/users/update/${user._id}`}
+                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(user._id)}
+                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-textPrimary">
+                      No users found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

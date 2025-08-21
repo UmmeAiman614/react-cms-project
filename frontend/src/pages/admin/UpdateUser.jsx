@@ -1,63 +1,83 @@
-import React, { useState, useEffect } from "react";
+// src/pages/admin/UpdateUser.jsx
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../../components/admin/Layout";
-import api from "../../api/api";
+import { getAllUsers, updateUser } from "../../api/api"; // assuming you can fetch single user from all users
 
 const UpdateUser = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // get user id from URL
   const navigate = useNavigate();
-  const [user, setUser] = useState({
+
+  const [formData, setFormData] = useState({
     fullname: "",
     username: "",
     password: "",
     role: "author",
   });
-  const [error, setError] = useState("");
 
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // Fetch the user data when component mounts
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await api.get(`/admin/users/${id}`);
-        setUser(res.data);
+        const users = await getAllUsers(); // get all users
+        const user = users.find(u => u._id === id);
+        if (user) {
+          setFormData({
+            fullname: user.fullname,
+            username: user.username,
+            password: "", // empty password by default
+            role: user.role,
+          });
+        } else {
+          setError("User not found");
+        }
       } catch (err) {
-        console.error(err);
-        setError("Failed to load user data.");
+        setError(err.response?.data?.message || "Failed to fetch user");
       }
     };
+
     fetchUser();
   }, [id]);
 
   const handleChange = (e) => {
-    setUser((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
+
     try {
-      await api.put(`/admin/update-user/${id}`, user);
-      navigate("/admin/users");
+      const response = await updateUser(id, formData);
+      setSuccess(response.message || "User updated successfully!");
+      navigate("/admin/users"); // redirect back to Users page
     } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || "Failed to update user.");
+      setError(err.response?.data?.message || "Something went wrong");
     }
   };
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 max-w-3xl">
+      <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Modify User Details</h1>
+
         <div className="bg-light-mint rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Update User</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <div className="mb-4 text-red-600">{error}</div>}
+          {success && <div className="mb-4 text-green-600">{success}</div>}
 
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block font-medium mb-1">Full Name</label>
               <input
                 type="text"
                 name="fullname"
-                value={user.fullname}
+                value={formData.fullname}
                 onChange={handleChange}
                 placeholder="Full Name"
                 className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-muted-green"
@@ -66,12 +86,11 @@ const UpdateUser = () => {
             </div>
 
             <div>
-              <label className="block font-medium mb-1">User Name</label>
+              <label className="block font-medium mb-1">Username</label>
               <input
                 type="text"
                 name="username"
-                value={user.username}
-                placeholder="Username"
+                value={formData.username}
                 disabled
                 className="w-full px-4 py-2 rounded border border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed"
               />
@@ -82,7 +101,7 @@ const UpdateUser = () => {
               <input
                 type="password"
                 name="password"
-                value={user.password}
+                value={formData.password}
                 onChange={handleChange}
                 placeholder="Password"
                 className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-muted-green"
@@ -93,7 +112,7 @@ const UpdateUser = () => {
               <label className="block font-medium mb-1">User Role</label>
               <select
                 name="role"
-                value={user.role}
+                value={formData.role}
                 onChange={handleChange}
                 className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-muted-green"
               >
@@ -105,14 +124,11 @@ const UpdateUser = () => {
             <div>
               <button
                 type="submit"
-                className="bg-muted-green text-white px-6 py-2 rounded hover:bg-deep-green transition cursor-pointer"
+                className="bg-muted-green text-white px-6 py-2 rounded hover:bg-deep-green transition"
               >
                 Update
               </button>
             </div>
-
-            {error && <p className="text-red-600 mt-2">{error}</p>}
-
           </form>
         </div>
       </div>

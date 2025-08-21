@@ -1,4 +1,3 @@
-// backend/models/user.js
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
@@ -32,5 +31,4 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-const User = mongoose.model('User', userSchema);
-export default User;
+export default mongoose.model('User', userSchema);

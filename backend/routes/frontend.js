@@ -1,7 +1,5 @@
-// backend/routes/frontendRoutes.js
 import express from 'express';
 import loadCommonData from '../middlewares/loadCommonData.js';
-
 import {
   index,
   articleByCategories,
@@ -11,20 +9,25 @@ import {
   addComment
 } from '../controllers/sideController.js';
 
-const router = express.Router();
+import { allCategory } from '../controllers/categoryController.js';
+import { settings } from '../controllers/userController.js';
 
-// Load common data middleware (e.g., settings, categories)
+const router = express.Router();
 router.use(loadCommonData);
 
-// -------------------- Public Routes --------------------
-
-// Homepage - fetch all news or recent articles
+// Homepage
 router.get('/', index);
+
+// Categories for navbar (frontend only)
+router.get('/category', (req, res, next) => {
+  req.query.frontend = "true";
+  next();
+}, allCategory);
 
 // Articles by category
 router.get('/category/:name', articleByCategories);
 
-// Single article by ID
+// Single article
 router.get('/single/:id', singleArticle);
 
 // Search articles
@@ -33,21 +36,18 @@ router.get('/search', search);
 // Articles by author
 router.get('/author/:name', author);
 
-// Add comment to an article
+// Add comment
 router.post('/single/:id/comment', addComment);
 
-// -------------------- Error Handling --------------------
+// Public settings
+router.get('/settings', settings);
 
-// 404 - API route not found
-router.use((req, res, next) => {
-  res.status(404).json({ message: 'API route not found' });
-});
+// 404 handler
+router.use((req, res) => res.status(404).json({ message: 'API route not found' }));
 
-// 500 - Internal Server Error
 router.use((err, req, res, next) => {
   console.error(err.stack);
-  const status = err.status || 500;
-  res.status(status).json({ message: err.message || 'Something went wrong', status });
+  res.status(err.status || 500).json({ message: err.message || 'Something went wrong' });
 });
 
 export default router;

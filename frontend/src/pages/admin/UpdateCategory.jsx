@@ -1,91 +1,118 @@
-import React, { useState, useEffect } from "react";
+// src/pages/admin/UpdateCategory.jsx
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "../../components/admin/Layout";
-import api from "../../api/api";
+import { getAllCategories, updateCategory } from "../../api/api";
 
 const UpdateCategory = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [category, setCategory] = useState({
+  const [formData, setFormData] = useState({
     name: "",
-    description: ""
+    description: "",
   });
 
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
+  // Fetch the category data when component mounts
   useEffect(() => {
-    fetchCategory();
-  }, []);
+    const fetchCategory = async () => {
+      try {
+        const data = await getAllCategories();
+        // ✅ Ensure we always extract the array
+        const categories = data.categories || data;
 
-  const fetchCategory = async () => {
-    try {
-      const res = await api.get(`/admin/category/${id}`);
-      setCategory(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        console.log("Fetched categories:", categories);
+
+        const category = categories.find(
+          (c) => c._id === id || c.id === id
+        );
+
+        if (category) {
+          setFormData({
+            name: category.name || "",
+            description: category.description || "",
+          });
+        } else {
+          setError("Category not found");
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+        setError(err.response?.data?.message || "Failed to fetch category");
+      }
+    };
+
+    fetchCategory();
+  }, [id]);
 
   const handleChange = (e) => {
-    setCategory({ ...category, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+
     try {
-      await api.put(`/admin/update-category/${id}`, category);
+      const response = await updateCategory(id, formData);
+      setSuccess(response.message || "Category updated successfully!");
       navigate("/admin/categories");
     } catch (err) {
-      console.error(err);
-      alert("Failed to update category.");
+      setError(err.response?.data?.message || "Something went wrong");
     }
   };
 
-  if (loading) return <Layout><p className="text-deep-green font-semibold text-center mt-10">Loading...</p></Layout>;
-
   return (
     <Layout>
-      <div className="container mx-auto p-4 max-w-2xl">
-        <h1 className="text-3xl font-bold text-center mb-6">Update Category</h1>
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 text-deep-green">
+          Modify Category
+        </h1>
 
-        <div className="bg-light-mint shadow-lg rounded-lg p-6">
+        <div className="bg-light-mint rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4 text-deep-green">
+            Update Category
+          </h2>
+
+          {error && <div className="mb-4 text-red-600">{error}</div>}
+          {success && <div className="mb-4 text-green-600">{success}</div>}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Category Name */}
             <div>
-              <label htmlFor="category_name" className="block font-semibold">Category Name</label>
+              <label className="block font-medium mb-1 text-deep-green">
+                Category Name
+              </label>
               <input
                 type="text"
                 name="name"
-                id="category_name"
-                value={category.name}
+                value={formData.name}
                 onChange={handleChange}
                 placeholder="Category Name"
+                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-muted-green"
                 required
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-muted-green"
               />
             </div>
 
-            {/* Description */}
             <div>
-              <label htmlFor="category_description" className="block font-semibold">Description</label>
+              <label className="block font-medium mb-1 text-deep-green">
+                Description
+              </label>
               <textarea
                 name="description"
-                id="category_description"
-                rows="4"
-                value={category.description}
+                value={formData.description}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-muted-green"
-              ></textarea>
+                placeholder="Category Description"
+                className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-muted-green"
+              />
             </div>
 
-            {/* Submit Button */}
-            <div className="text-center">
+            <div>
               <button
                 type="submit"
-                className="bg-muted-green text-white px-5 py-2 rounded hover:bg-deep-green transition"
+                className="bg-muted-green text-white px-6 py-2 rounded hover:bg-deep-green transition"
               >
                 Update
               </button>

@@ -1,19 +1,11 @@
-import React from 'react';
-import Navbar from './Navbar';
-import Footer from './Footer';
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 const Layout = ({ children }) => {
   return (
-    <div className="flex flex-col min-h-screen bg-pale-yellow text-deep-green">
-      {/* Navbar */}
+    <div className="bg-pale-yellow text-deep-green min-h-screen flex flex-col">
       <Navbar />
-
-      {/* Main Content */}
-      <main className="flex-1 p-6 container mx-auto">
-        {children}
-      </main>
-
-      {/* Footer */}
+      <main className="flex-grow container mx-auto my-4 px-4">{children}</main>
       <Footer />
     </div>
   );

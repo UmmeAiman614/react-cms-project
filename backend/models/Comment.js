@@ -1,10 +1,9 @@
-// backend/models/comment.js
 import mongoose from 'mongoose';
 
 const commentSchema = new mongoose.Schema({
   article: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'News', // reference to the News model
+    ref: 'News',
     required: true
   },
   name: {
@@ -29,5 +28,4 @@ const commentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-const Comment = mongoose.model('Comment', commentSchema);
-export default Comment;
+export default mongoose.model('Comment', commentSchema);

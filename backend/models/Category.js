@@ -1,4 +1,3 @@
-// backend/models/category.js
 import mongoose from 'mongoose';
 import slugify from 'slugify';
 
@@ -22,13 +21,9 @@ const categorySchema = new mongoose.Schema({
   }
 });
 
-// Generate slug before validation
 categorySchema.pre('validate', function(next) {
-  if (this.name) {
-    this.slug = slugify(this.name, { lower: true });
-  }
+  this.slug = slugify(this.name, { lower: true });
   next();
 });
 
-const Category = mongoose.model('Category', categorySchema);
-export default Category;
+export default mongoose.model('Category', categorySchema);

@@ -1,49 +1,56 @@
+// src/pages/AddCategory.jsx
 import React, { useState } from "react";
-import Layout from "../../components/admin/Layout";
-import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/api"; // your backend API instance
 
 const AddCategory = () => {
-  const navigate = useNavigate();
-  const [category, setCategory] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     description: "",
   });
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setCategory({ ...category, [e.target.name]: e.target.value });
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/admin/add-category", category);
+      setError("");
+      await api.post("/admin/add-category", formData, { withCredentials: true }); // backend route
+      // ✅ redirect to categories page after success
       navigate("/admin/categories");
     } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || "Failed to add category");
+      setError(err.response?.data?.message || "Something went wrong.");
     }
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto p-4 max-w-2xl">
+    <main className="bg-pale-yellow text-deep-green min-h-screen flex flex-col p-4">
+      <div className="max-w-2xl mx-auto w-full">
         <h1 className="text-3xl font-bold text-center mb-6">Add New Category</h1>
 
         <div className="bg-light-mint shadow-lg rounded-lg p-6">
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+          {/* Form Start */}
+          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
             {/* Category Name */}
             <div>
-              <label htmlFor="name" className="block font-semibold">
+              <label
+                htmlFor="category_name"
+                className="block font-semibold mb-1"
+              >
                 Category Name
               </label>
               <input
                 type="text"
                 name="name"
-                id="name"
-                value={category.name}
+                id="category_name"
+                value={formData.name}
                 onChange={handleChange}
                 placeholder="Category Name"
                 required
@@ -53,20 +60,23 @@ const AddCategory = () => {
 
             {/* Description */}
             <div>
-              <label htmlFor="description" className="block font-semibold">
+              <label
+                htmlFor="category_description"
+                className="block font-semibold mb-1"
+              >
                 Description
               </label>
               <textarea
                 name="description"
-                id="description"
-                value={category.description}
-                onChange={handleChange}
+                id="category_description"
                 rows="4"
+                value={formData.description}
+                onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-muted-green"
-              />
+              ></textarea>
             </div>
 
-            {/* Submit */}
+            {/* Submit Button */}
             <div className="text-center">
               <button
                 type="submit"
@@ -76,12 +86,17 @@ const AddCategory = () => {
               </button>
             </div>
           </form>
+          {/* /Form End */}
 
-          {/* Error Message */}
-          {error && <div className="mt-4 text-red-600 font-semibold">{error}</div>}
+          {/* Error message */}
+          {error && (
+            <div className="mt-4 text-red-600 font-medium text-center">
+              {error}
+            </div>
+          )}
         </div>
       </div>
-    </Layout>
+    </main>
   );
 };
 

@@ -1,16 +1,20 @@
-// backend/controllers/sideController.js
-import categoryModel from '../models/Category.js';
-import newsModel from '../models/News.js';
-import userModel from '../models/User.js';
-import commentModel from '../models/Comment.js';
-import createError from '../utils/error-message.js';
+// controllers/sideController.js
+import mongoose from 'mongoose';
+import Category from '../models/Category.js';
+import News from '../models/News.js';
+import User from '../models/User.js';
+import Comment from '../models/Comment.js';
 import paginate from '../utils/paginate.js';
+import createError from '../utils/error-message.js';
 
-// Home page - paginated news
+// -------------------- Home Page --------------------
 export const index = async (req, res, next) => {
   try {
-    const paginatedNews = await paginate(newsModel, {},
-      req.query, {
+    const paginatedNews = await paginate(
+      News,
+      {},
+      req.query,
+      {
         populate: [
           { path: 'category', select: 'name slug' },
           { path: 'author', select: 'fullname' }
@@ -19,20 +23,23 @@ export const index = async (req, res, next) => {
       }
     );
 
-    res.json({ paginatedNews, query: req.query });
+    res.json({ success: true, data: paginatedNews });
   } catch (error) {
     next(error);
   }
 };
 
-// Get articles by category
+// -------------------- Articles by Category --------------------
 export const articleByCategories = async (req, res, next) => {
   try {
-    const category = await categoryModel.findOne({ slug: req.params.name });
+    const category = await Category.findOne({ slug: req.params.name });
     if (!category) return next(createError('Category not found', 404));
 
-    const paginatedNews = await paginate(newsModel, { category: category._id },
-      req.query, {
+    const paginatedNews = await paginate(
+      News,
+      { category: category._id },
+      req.query,
+      {
         populate: [
           { path: 'category', select: 'name slug' },
           { path: 'author', select: 'fullname' }
@@ -41,41 +48,45 @@ export const articleByCategories = async (req, res, next) => {
       }
     );
 
-    res.json({ paginatedNews, category, query: req.query });
+    res.json({ success: true, category, data: paginatedNews });
   } catch (error) {
     next(error);
   }
 };
 
-// Get single article with approved comments
+// -------------------- Single Article --------------------
 export const singleArticle = async (req, res, next) => {
   try {
-    const singleNews = await newsModel.findById(req.params.id)
+    const article = await News.findById(req.params.id)
       .populate('category', 'name slug')
       .populate('author', 'fullname');
 
-    if (!singleNews) return next(createError('Article not found', 404));
+    if (!article) return next(createError('Article not found', 404));
 
-    const comments = await commentModel.find({ article: req.params.id, status: 'approved' })
+    const comments = await Comment.find({ article: req.params.id, status: 'approved' })
       .sort({ createdAt: -1 });
 
-    res.json({ singleNews, comments });
+    res.json({ success: true, article, comments });
   } catch (error) {
     next(error);
   }
 };
 
-// Search articles
+// -------------------- Search Articles --------------------
 export const search = async (req, res, next) => {
   try {
     const searchQuery = req.query.search || '';
-    const paginatedNews = await paginate(newsModel, {
-      $or: [
-        { title: { $regex: searchQuery, $options: 'i' } },
-        { content: { $regex: searchQuery, $options: 'i' } }
-      ]
-    },
-      req.query, {
+
+    const paginatedNews = await paginate(
+      News,
+      {
+        $or: [
+          { title: { $regex: searchQuery, $options: 'i' } },
+          { content: { $regex: searchQuery, $options: 'i' } }
+        ]
+      },
+      req.query,
+      {
         populate: [
           { path: 'category', select: 'name slug' },
           { path: 'author', select: 'fullname' }
@@ -84,20 +95,23 @@ export const search = async (req, res, next) => {
       }
     );
 
-    res.json({ paginatedNews, searchQuery, query: req.query });
+    res.json({ success: true, searchQuery, data: paginatedNews });
   } catch (error) {
     next(error);
   }
 };
 
-// Get articles by author
+// -------------------- Articles by Author --------------------
 export const author = async (req, res, next) => {
   try {
-    const author = await userModel.findById(req.params.name);
-    if (!author) return next(createError('Author not found', 404));
+    const authorData = await User.findById(req.params.name);
+    if (!authorData) return next(createError('Author not found', 404));
 
-    const paginatedNews = await paginate(newsModel, { author: req.params.name },
-      req.query, {
+    const paginatedNews = await paginate(
+      News,
+      { author: req.params.name },
+      req.query,
+      {
         populate: [
           { path: 'category', select: 'name slug' },
           { path: 'author', select: 'fullname' }
@@ -106,27 +120,40 @@ export const author = async (req, res, next) => {
       }
     );
 
-    res.json({ paginatedNews, author, query: req.query });
+    res.json({ success: true, author: authorData, data: paginatedNews });
   } catch (error) {
     next(error);
   }
 };
 
-// Add comment to an article
+// -------------------- Add Comment --------------------
 export const addComment = async (req, res, next) => {
   try {
     const { name, email, content } = req.body;
+    const articleId = req.params.id;
 
-    const newComment = new commentModel({
+    console.log("POST /single/:id/comment hit");
+    console.log("Request params:", req.params);
+    console.log("Request body:", req.body);
+    console.log("Creating new comment for article:", articleId);
+
+    const newComment = new Comment({
       name,
       email,
       content,
-      article: req.params.id
+      article: articleId,
+      status: 'pending', // ✅ explicitly set default
     });
 
     await newComment.save();
-    res.status(201).json({ message: 'Comment added', comment: newComment });
+
+    console.log("Comment saved:", newComment);
+
+    res.status(201).json({ success: true, message: 'Comment added', comment: newComment });
   } catch (error) {
+    console.error("Failed to add comment:", error);
     next(createError('Failed to add comment', 500));
   }
 };
+
+

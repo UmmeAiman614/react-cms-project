@@ -1,8 +1,8 @@
 // src/App.jsx
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-// Admin Pages
+// ---------- Admin Pages ----------
+import Login from "./pages/admin/Login";
 import Dashboard from "./pages/admin/Dashboard";
 import Articles from "./pages/admin/Articles";
 import AddArticle from "./pages/admin/AddArticle";
@@ -15,32 +15,46 @@ import AddUser from "./pages/admin/AddUser";
 import UpdateUser from "./pages/admin/UpdateUser";
 import Comments from "./pages/admin/Comments";
 import Settings from "./pages/admin/Settings";
-import Login from "./pages/admin/Login";
+
+// ---------- Frontend Pages ----------
+import Home from "./pages/frontend/Home";
+import Category from "./pages/frontend/Category";
+import SingleArticle from "./pages/frontend/SingleArticle";
+import Author from "./pages/frontend/Author";
+import Search from "./pages/frontend/Search";
+
+
+// Admin Route wrapper
+import AdminRoutes from "./routes/AdminRoutes";
 
 const App = () => {
   return (
     <Router>
       <Routes>
-        {/* Default redirect from "/" to "/admin/login" */}
-        <Route path="/" element={<Navigate to="/admin/dashboard" />} />
-
-        {/* Admin Routes */}
-        <Route path="/admin/dashboard" element={<Dashboard />} />
-        <Route path="/admin/articles" element={<Articles />} />
-        <Route path="/admin/articles/add" element={<AddArticle />} />
-        <Route path="/admin/articles/update/:id" element={<UpdateArticle />} />
-        <Route path="/admin/categories" element={<Categories />} />
-        <Route path="/admin/categories/add" element={<AddCategory />} />
-        <Route path="/admin/categories/update/:id" element={<UpdateCategory />} />
-        <Route path="/admin/users" element={<Users />} />
-        <Route path="/admin/users/add" element={<AddUser />} />
-        <Route path="/admin/users/update/:id" element={<UpdateUser />} />
-        <Route path="/admin/comments" element={<Comments />} />
-        <Route path="/admin/settings" element={<Settings />} />
+        {/* ---------- Admin Routes ---------- */}
         <Route path="/admin/login" element={<Login />} />
+        <Route path="/admin/*" element={<AdminRoutes />}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="articles" element={<Articles />} />
+          <Route path="articles/add" element={<AddArticle />} />
+          <Route path="articles/update/:id" element={<UpdateArticle />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="categories/add" element={<AddCategory />} />
+          <Route path="categories/update/:id" element={<UpdateCategory />} />
+          <Route path="users" element={<Users />} />
+          <Route path="users/add" element={<AddUser />} />
+          <Route path="users/update/:id" element={<UpdateUser />} />
+          <Route path="comments" element={<Comments />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
 
-        {/* Catch all - redirect to login if route not found */}
-        <Route path="*" element={<Navigate to="/admin/login" />} />
+        {/* ---------- Frontend Routes ---------- */}
+        <Route path="/" element={<Home />} />
+        <Route path="/category/:name" element={<Category />} />
+        <Route path="/single/:id" element={<SingleArticle />} />
+        <Route path="/author/:name" element={<Author />} />
+        <Route path="/search" element={<Search />} />
+
       </Routes>
     </Router>
   );

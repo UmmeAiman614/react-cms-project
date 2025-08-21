@@ -1,4 +1,3 @@
-// backend/models/news.js
 import mongoose from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
 
@@ -31,8 +30,6 @@ const newsSchema = new mongoose.Schema({
   }
 });
 
-// Add pagination plugin
 newsSchema.plugin(mongoosePaginate);
 
-const News = mongoose.model('News', newsSchema);
-export default News;
+export default mongoose.model('News', newsSchema);

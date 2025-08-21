@@ -1,147 +1,162 @@
-import React, { useEffect, useState } from "react";
+// src/pages/admin/AddArticle.jsx
+import React, { useState, useEffect } from "react";
+import { useQuill } from "react-quilljs";
+import "quill/dist/quill.snow.css";
 import Layout from "../../components/admin/Layout";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 
 const AddArticle = () => {
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [image, setImage] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [formData, setFormData] = useState({
-    title: "",
-    content: "",
-    category: "",
-    image: null,
-  });
+  const [content, setContent] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const { quill, quillRef } = useQuill();
 
   useEffect(() => {
-    // Fetch categories from backend
+    if (quill) {
+      quill.on("text-change", () => {
+        setContent(quill.root.innerHTML);
+      });
+    }
+  }, [quill]);
+
+  // Fetch categories
+  useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await api.get("/admin/categories");
-        setCategories(res.data);
+        const res = await api.get("/admin/category", { withCredentials: true });
+        setCategories(res.data.categories || []);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load categories:", err);
+        setError("Failed to load categories");
       }
     };
     fetchCategories();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "image") {
-      setFormData({ ...formData, image: files[0] });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const data = new FormData();
-      data.append("title", formData.title);
-      data.append("content", formData.content);
-      data.append("category", formData.category);
-      data.append("image", formData.image);
+    setError("");
 
-      await api.post("/admin/add-article", data, {
+    if (!title || !content || !category || !image) {
+      setError("All fields are required");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", content);
+      formData.append("category", category);
+      formData.append("image", image);
+
+      // Send request with cookies
+      const res = await api.post("/admin/add-article", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true, // ensures cookies are sent
       });
 
-      alert("Article added successfully!");
-      setFormData({ title: "", content: "", category: "", image: null });
+      console.log("Article added:", res.data.article);
+
+      // Reset form
+      setTitle("");
+      setContent("");
+      setCategory("");
+      setImage(null);
+      if (quill) quill.setContents([]);
+
+      navigate("/admin/articles");
     } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || "Something went wrong!");
+      console.error("Error adding article:", err);
+      setError(err.response?.data?.message || "Failed to add article");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Layout>
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold text-center mb-6">Add New Article</h1>
+      <main className="bg-bgMain text-textPrimary min-h-screen flex flex-col p-4">
+        <div className="max-w-4xl mx-auto w-full">
+          <h1 className="text-3xl font-bold text-center mb-6">Add New Article</h1>
+          <div className="bg-light-mint shadow-lg rounded-lg p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block font-semibold">Title</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  required
+                />
+              </div>
 
-        <div className="bg-bgCard shadow-lg rounded-lg p-6">
-          {error && (
-            <div className="mb-4 text-red-600 font-semibold">{error}</div>
-          )}
+              <div>
+                <label className="block font-semibold mb-2">Description</label>
+                <div
+                  ref={quillRef}
+                  className="bg-white min-h-[200px] border border-gray-300 rounded p-2"
+                />
+              </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="article_title" className="block font-semibold">
-                Title
-              </label>
-              <input
-                type="text"
-                name="title"
-                id="article_title"
-                value={formData.title}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="article_content" className="block font-semibold">
-                Description
-              </label>
-              <textarea
-                name="content"
-                id="article_content"
-                value={formData.content}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                rows={6}
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="article_category" className="block font-semibold">
-                Category
-              </label>
-              <select
-                name="category"
-                id="article_category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                required
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {cat.name}
+              <div>
+                <label className="block font-semibold">Category</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  required
+                >
+                  <option value="" disabled>
+                    Select Category
                   </option>
-                ))}
-              </select>
-            </div>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label htmlFor="article_image" className="block font-semibold">
-                Article Image
-              </label>
-              <input
-                type="file"
-                name="image"
-                id="article_image"
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-                required
-              />
-            </div>
+              <div>
+                <label className="block font-semibold">Article Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImage(e.target.files[0])}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                  required
+                />
+              </div>
 
-            <div className="text-center">
-              <button
-                type="submit"
-                className="bg-accent text-white px-5 py-2 rounded hover:bg-textPrimary transition"
-              >
-                Save
-              </button>
-            </div>
-          </form>
+              <div className="text-center pt-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-muted-green text-white px-5 py-2 rounded hover:bg-deep-green transition disabled:opacity-50"
+                >
+                  {loading ? "Saving..." : "Save Article"}
+                </button>
+              </div>
+
+              {error && (
+                <div className="mt-4 text-red-600 font-semibold text-center">
+                  {error}
+                </div>
+              )}
+            </form>
+          </div>
         </div>
-      </div>
+      </main>
     </Layout>
   );
 };

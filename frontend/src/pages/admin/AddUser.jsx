@@ -1,90 +1,99 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/admin/AddUser.jsx
+import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // import navigate
 import Layout from "../../components/admin/Layout";
-import api from "../../api/api";
+import { addUser } from "../../api/api"; // use the exported function from api.js
 
 const AddUser = () => {
-  const navigate = useNavigate();
-
-  const [user, setUser] = useState({
+  const navigate = useNavigate(); // initialize navigate
+  const [formData, setFormData] = useState({
     fullname: "",
     username: "",
     password: "",
-    role: "author"
+    role: "author",
   });
 
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   const handleChange = (e) => {
-    setUser({ ...user, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+
     try {
-      await api.post("/admin/add-user", user);
+      const response = await addUser(formData); // call API function
+      setSuccess(response.message || "User added successfully!");
+
+      // Redirect to Users page after successful addition
       navigate("/admin/users");
     } catch (err) {
-      console.error(err);
-      alert("Failed to add user.");
+      setError(err.response?.data?.message || "Something went wrong");
     }
   };
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 max-w-3xl">
+      <div className="max-w-3xl mx-auto">
+        {/* Header */}
         <h1 className="text-3xl font-bold mb-6">Add User</h1>
 
+        {/* Card/Form */}
         <div className="bg-light-mint rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Add New User</h2>
 
+          {error && <div className="mb-4 text-red-600">{error}</div>}
+          {success && <div className="mb-4 text-green-600">{success}</div>}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Full Name */}
             <div>
               <label className="block font-medium mb-1">Full Name</label>
               <input
                 type="text"
                 name="fullname"
-                value={user.fullname}
+                value={formData.fullname}
                 onChange={handleChange}
                 placeholder="Full Name"
-                required
                 className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-muted-green"
+                required
               />
             </div>
 
-            {/* Username */}
             <div>
-              <label className="block font-medium mb-1">User Name</label>
+              <label className="block font-medium mb-1">Username</label>
               <input
                 type="text"
                 name="username"
-                value={user.username}
+                value={formData.username}
                 onChange={handleChange}
                 placeholder="Username"
-                required
                 className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-muted-green"
+                required
               />
             </div>
 
-            {/* Password */}
             <div>
               <label className="block font-medium mb-1">Password</label>
               <input
                 type="password"
                 name="password"
-                value={user.password}
+                value={formData.password}
                 onChange={handleChange}
                 placeholder="Password"
-                required
                 className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-muted-green"
+                required
               />
             </div>
 
-            {/* Role */}
             <div>
               <label className="block font-medium mb-1">User Role</label>
               <select
                 name="role"
-                value={user.role}
+                value={formData.role}
                 onChange={handleChange}
                 className="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-muted-green"
               >
@@ -93,7 +102,6 @@ const AddUser = () => {
               </select>
             </div>
 
-            {/* Submit */}
             <div>
               <button
                 type="submit"

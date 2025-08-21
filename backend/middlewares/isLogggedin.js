@@ -1,26 +1,27 @@
-// backend/middlewares/isLoggedIn.js
 import jwt from 'jsonwebtoken';
-import createError from '../utils/error-message.js';
 
-const isLoggedIn = async (req, res, next) => {
+const isLoggedIn = (req, res, next) => {
   try {
     const token = req.cookies?.token;
     if (!token) {
-      return next(createError('Not authenticated', 401));
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, tokenData) => {
-      if (err) {
-        return next(createError('Invalid token', 401));
-      }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      req.id = tokenData.id;
-      req.role = tokenData.role;
-      req.fullname = tokenData.fullname;
-      next();
-    });
+    req.user = {
+      id: decoded.id,
+      fullname: decoded.fullname,
+      role: decoded.role,
+    };
+
+    next();
   } catch (error) {
-    next(createError(error.message, 500));
+    console.error('Auth error:', error.message);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired, please login again' });
+    }
+    res.status(401).json({ message: 'Invalid token, authentication failed' });
   }
 };
 

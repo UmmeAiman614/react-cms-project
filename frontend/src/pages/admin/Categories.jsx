@@ -1,99 +1,103 @@
-import React, { useEffect, useState } from "react";
-import Layout from "../../components/admin/Layout";
-import api from "../../api/api";
+// src/pages/admin/Categories.jsx
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Layout from "../../components/admin/Layout";
+import { getAllCategories, deleteCategory } from "../../api/api";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // Fetch categories on mount
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllCategories();
+        // 🔥 Check if backend returns { categories: [...] }
+        setCategories(Array.isArray(data) ? data : data.categories || []);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to fetch categories");
+      }
+    };
     fetchCategories();
   }, []);
 
-  const fetchCategories = async () => {
-    try {
-      const res = await api.get("/admin/categories");
-      setCategories(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Delete category
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure to delete this category?")) return;
 
-  const deleteCategory = async (id) => {
-    if (window.confirm("Are you sure to delete this Category?")) {
-      try {
-        await api.delete(`/admin/delete-category/${id}`);
-        setCategories(categories.filter((cat) => cat._id !== id));
-      } catch (err) {
-        if (err.response && err.response.status === 400) {
-          alert(err.response.data.message);
-        } else {
-          alert("Failed to delete category.");
-        }
-      }
+    try {
+      await deleteCategory(id);
+      setCategories(categories.filter((cat) => cat._id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete category");
     }
   };
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 max-w-7xl">
+      <div className="max-w-7xl mx-auto">
+        {/* Header & Add Button */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <i className="fa fa-gears"></i> All Categories
+            <i className="fa fa-list"></i> All Categories
           </h1>
           <Link
-            to="/admin/add-category"
+            to="/admin/categories/add"
             className="bg-muted-green text-white px-4 py-2 rounded hover:bg-deep-green transition w-full md:w-auto text-center"
           >
-            Add New Category
+            Add Category
           </Link>
         </div>
 
+        {error && <div className="text-red-600 mb-4">{error}</div>}
+
+        {/* Categories Table */}
         <div className="flex justify-center">
-          <div className="bg-light-mint rounded-lg shadow p-4 overflow-x-auto w-full">
-            {loading ? (
-              <p className="text-deep-green font-semibold text-center">Loading...</p>
-            ) : (
-              <table className="min-w-full border border-gray-300">
-                <thead>
-                  <tr className="bg-muted-green text-white">
-                    <th className="px-4 py-2">S.No.</th>
-                    <th className="px-4 py-2">Category Name</th>
-                    <th className="px-4 py-2">Slug</th>
-                    <th className="px-4 py-2">Actions</th>
+          <div className="bg-light-mint rounded-lg shadow p-4 max-w-full md:max-w-[1200px] overflow-x-auto md:overflow-x-hidden">
+            <table className="min-w-[600px] w-full border-collapse">
+              <thead>
+                <tr className="bg-muted-green text-white">
+                  <th className="p-2 border">S.No.</th>
+                  <th className="p-2 border">Name</th>
+                  <th className="p-2 border">Description</th>
+                  <th className="p-2 border">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((category, index) => (
+                  <tr
+                    key={category._id}
+                    className={index % 2 === 0 ? "bg-light-mint" : "bg-[#C2E8C5]"}
+                  >
+                    <td className="p-2 border text-center">{index + 1}</td>
+                    <td className="p-2 border">{category.name}</td>
+                    <td className="p-2 border">{category.description}</td>
+                    <td className="p-2 border text-center flex justify-center gap-2">
+                      <Link
+                        to={`/admin/categories/update/${category._id}`}
+                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(category._id)}
+                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition"
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {categories.map((cat, idx) => (
-                    <tr
-                      key={cat._id}
-                      className={`${idx % 2 === 0 ? "bg-light-mint" : "bg-pale-yellow"} text-deep-green hover:bg-muted-green hover:text-white transition`}
-                    >
-                      <td className="border px-4 py-2 text-center">{idx + 1}</td>
-                      <td className="border px-4 py-2">{cat.name}</td>
-                      <td className="border px-4 py-2">{cat.slug}</td>
-                      <td className="border px-4 py-2 flex justify-center gap-2">
-                        <Link
-                          to={`/admin/update-category/${cat._id}`}
-                          className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => deleteCategory(cat._id)}
-                          className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                ))}
+                {categories.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="p-4 text-center text-textPrimary">
+                      No categories found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -1,4 +1,3 @@
-// backend/middlewares/validation.js
 import { body } from 'express-validator';
 
 export const loginValidation = [
@@ -26,7 +25,6 @@ export const userValidation = [
     .withMessage('Fullname is required')
     .isLength({ min: 5, max: 25 })
     .withMessage('Fullname must be at least 5 to 25 characters long'),
-
   body('username')
     .trim()
     .matches(/^\S+$/)
@@ -35,14 +33,12 @@ export const userValidation = [
     .withMessage('Username is required')
     .isLength({ min: 5, max: 10 })
     .withMessage('Username must be at least 5 to 10 characters long'),
-
   body('password')
     .trim()
     .notEmpty()
     .withMessage('Password is required')
     .isLength({ min: 5, max: 10 })
     .withMessage('Password must be at least 5 to 10 characters long'),
-
   body('role')
     .trim()
     .notEmpty()
@@ -58,12 +54,10 @@ export const userUpdateValidation = [
     .withMessage('Fullname is required')
     .isLength({ min: 5, max: 25 })
     .withMessage('Fullname must be at least 5 to 25 characters long'),
-
   body('password')
     .optional({ checkFalsy: true })
     .isLength({ min: 5, max: 10 })
     .withMessage('Password must be at least 5 to 10 characters long'),
-
   body('role')
     .trim()
     .notEmpty()
@@ -79,7 +73,6 @@ export const categoryValidation = [
     .withMessage('Category name is required')
     .isLength({ min: 3, max: 25 })
     .withMessage('Category name must be at least 3 to 25 characters long'),
-
   body('description')
     .isLength({ max: 100 })
     .withMessage('Description must be at most 100 characters long')
@@ -92,14 +85,12 @@ export const articleValidation = [
     .withMessage('Title is required')
     .isLength({ min: 7, max: 100 })
     .withMessage('Title must be at least 7 to 100 characters long'),
-
   body('content')
     .trim()
     .notEmpty()
     .withMessage('Content is required')
     .isLength({ min: 50, max: 1500 })
     .withMessage('Content must be at least 50 to 1500 characters long'),
-
   body('category')
     .trim()
     .notEmpty()

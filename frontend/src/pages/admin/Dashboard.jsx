@@ -1,45 +1,90 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api/api"; // <-- correct relative path
+import api from "../../api/api";
+import { FaCubes, FaFileAlt, FaCogs, FaUsers } from "react-icons/fa";
 import Layout from "../../components/admin/Layout";
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({
-    articles: 0,
-    categories: 0,
-    users: 0,
+  const [data, setData] = useState({
+    fullname: "",
+    role: "",
+    articlesCount: 0,
+    categoriesCount: 0,
+    usersCount: 0,
   });
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get("/admin/dashboard"); // adjust your backend endpoint
-        setStats(res.data);
-      } catch (error) {
-        console.error(error);
+        const res = await api.get("/admin/dashboard");
+        console.log("Dashboard API response:", res.data);
+
+        setData({
+          fullname: res.data.fullname || "",
+          role: res.data.role || "",
+          articlesCount: res.data.articlesCount || 0,
+          categoriesCount: res.data.categoriesCount || 0,
+          usersCount: res.data.usersCount || 0,
+        });
+      } catch (err) {
+        console.error("Error loading dashboard:", err);
       }
     };
-    fetchStats();
+    fetchData();
   }, []);
 
   return (
     <Layout>
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-bgCard text-textPrimary p-6 rounded shadow flex flex-col items-center">
-            <i className="fa fa-file-text text-3xl mb-2"></i>
-            <h4>Articles</h4>
-            <h2 className="text-2xl font-bold">{stats.articles}</h2>
+      <div className="p-4 bg-pale-yellow min-h-screen text-deep-green">
+        <div className="container mx-auto">
+          {/* Header */}
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold flex flex-wrap items-center gap-2">
+              <FaCubes />
+              Dashboard
+              <small className="text-deep-green text-2xl font-normal w-full sm:w-auto">
+                | Hello {data.fullname ? data.fullname : "User"}
+              </small>
+            </h1>
           </div>
-          <div className="bg-accent text-white p-6 rounded shadow flex flex-col items-center">
-            <i className="fa fa-gears text-3xl mb-2"></i>
-            <h4>Categories</h4>
-            <h2 className="text-2xl font-bold">{stats.categories}</h2>
-          </div>
-          <div className="bg-bgCard text-textPrimary p-6 rounded shadow flex flex-col items-center">
-            <i className="fa fa-users text-3xl mb-2"></i>
-            <h4>Users</h4>
-            <h2 className="text-2xl font-bold">{stats.users}</h2>
+
+          {/* Dashboard Blocks */}
+          <div className="flex flex-wrap -mx-2">
+            {/* Articles Block */}
+            <div className="w-full sm:w-1/2 md:w-1/4 px-2 mb-4">
+              <div className="bg-deep-green text-white rounded-lg shadow p-6 flex flex-col items-center justify-center hover:scale-105 transition">
+                <FaFileAlt className="text-3xl mb-2" />
+                <h4 className="text-lg font-semibold text-center">Articles</h4>
+                <h1 className="text-2xl font-bold mt-2">
+                  {data.articlesCount}
+                </h1>
+              </div>
+            </div>
+
+            {/* Categories Block */}
+            <div className="w-full sm:w-1/2 md:w-1/4 px-2 mb-4">
+              <div className="bg-muted-green text-white rounded-lg shadow p-6 flex flex-col items-center justify-center hover:scale-105 transition">
+                <FaCogs className="text-3xl mb-2" />
+                <h4 className="text-lg font-semibold text-center">
+                  Categories
+                </h4>
+                <h1 className="text-2xl font-bold mt-2">
+                  {data.categoriesCount}
+                </h1>
+              </div>
+            </div>
+
+            {/* Users Block (Admin only) */}
+            {data.role === "admin" && (
+              <div className="w-full sm:w-1/2 md:w-1/4 px-2 mb-4">
+                <div className="bg-light-mint text-deep-green rounded-lg shadow p-6 flex flex-col items-center justify-center hover:scale-105 transition">
+                  <FaUsers className="text-3xl mb-2" />
+                  <h4 className="text-lg font-semibold text-center">Users</h4>
+                  <h1 className="text-2xl font-bold mt-2">
+                    {data.usersCount}
+                  </h1>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
